@@ -44,4 +44,6 @@ with Dr. Flint in the case of questions that I cannot find answers to.
 
 litType(Value, Expression, Type inferred)
 
+vardecltype(VariableName, Value, TypeDeclared)
+
 Last arg is always output?

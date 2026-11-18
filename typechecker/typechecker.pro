@@ -43,18 +43,10 @@ typecheck((vardecl, Var, Expr), I, [(Var, Type)|I]) :-
 
 %% Explicit type declaration
 typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
-    \+ member((Var, _, _), I), %% The variable doesn't already exist in the environment
-    litType(Expr, I, EType), %% Get the expression Type
-    compatible(EType, Type), %% Check for compatibility
+    \+ member((Var, _), I), %% The variable doesn't already exist in the environment
+    litType(Expr, _, Type), %% Get the expression Type
     Type \= void. %% Type is not declared as a void
     %% Returns true if all conditions are met, adds Var to the environment.
-
-%%-----------------------------------------------------------------------------------
-%% Lookup
-lookup(Variable, Environment, Type) :-
-    atom(Variable), % The variable name can be used as an identifier
-    member((Variable, Type), Environment). % The variable/type exists in the environment
-    %% Returns true if variable exists in the environment
 %%-----------------------------------------------------------------------------------
 %% Types
 
@@ -65,6 +57,11 @@ litType(X, _, int) :-
 
 %% Reals
 litType(X, _, real) :-
+    float(X),
+    !.
+
+%% Floats
+litType(X, _, float) :-
     float(X),
     !.
 
