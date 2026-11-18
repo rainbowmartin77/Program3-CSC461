@@ -40,6 +40,14 @@ lookup(Variable, Environment, Type) :-
     member((Variable, Type), Environment). % The variable/type exists in the environment
     %% Returns true if variable exists in the environment
 %%-----------------------------------------------------------------------------------
+%% Literals
+litType(X, _, int) :-
+    integer(X).
+litType(X, _, real) :-
+    real(X).
+litType(X, _, float) :-
+    float(X).
+-------------------------------------------------------------------------------------
 %% Type rules
 %% Base rules
 compatible_rule(int, real).
@@ -56,9 +64,6 @@ compatible(T1, T2) :-
 -------------------------------------------------------------------------------------
 %% Var-decl
 
-typecheck((vardecl, Name, Value), I, [(Name, Type)|I]) :-
-    lookup(Value, I, ThisType), %% If the variable is not in the environment
-    compatible(ThisType, Type).
 
 
 
