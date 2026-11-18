@@ -44,7 +44,7 @@ typecheck((vardecl, Var, Expr), I, [(Var, T)|I]) :-
 %% Explicit type declaration
 typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    litType(Expr, _, Type), %% Get the expression Type
+    aType(Expr, I, Type), %% Get the expression Type
     Type \= void. %% Type is not declared as a void
     %% Returns true if all conditions are met, adds Var to the environment.
 %%-----------------------------------------------------------------------------------
@@ -96,18 +96,27 @@ litType([H|T], E, (array, Type)) :-
     %% Returns true and type of array
 
 %%-------------------------------------------------------------------------------------
-%% Type rules
+%% Compatibility rules
 %% Base rules
 compatible_rule(int, real). %% integers are compatible with reals
 compatible_rule(float, real). %% floats are compatible with reals
+compatible_rule(char, (array, char)). %% characters are compatible with strings
 
+%% Reflexive
 compatible(T, T). %% Each type is compatible with itself
 
+%% Check for different type compatibility
 compatible(T1, T2) :-
-    compatible_rule(T1, T3), %% If T1 is compatible with T3
-    T1 \= T3,
-    compatible(T3, T2). %% T3 is also compatible with T2
-    %% Returns true because T1 is compatible with T2
+    compatible_rule(T1, T2).
+
+%% Check array compatibility
+compatible((array, T1), (array, T2)) :-
+compatible(T1, T2).
+
+%% Transitive compatibility
+compatible(T1, T2) :-
+    compatible_rule(T1, T3),
+    compatible(T3, T2).
 %%-------------------------------------------------------------------------------------
 
 
