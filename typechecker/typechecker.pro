@@ -33,6 +33,15 @@ typecheck([H|T], I, O) :-
     %% Recursively read remainder of list, using M as updated list for I and OutEnv
     %% as updated list for OutEnv
     typecheck(T, M, O).
+
+%% Inferred type declaration
+typecheck((vardecl, Var, Expr), I, [(Var, Type)|I]) :-
+    \+ member((Var, _), I), %% The variable doesn't already exist in the environment
+    litType(Expr, I, Type), %% Determine the variable type
+    Type \= void. %% Type returned from litType is not void
+    %% Returns true if all conditions met, adds Var to the environment.
+
+
 %%-----------------------------------------------------------------------------------
 %% Lookup
 lookup(Variable, Environment, Type) :-
@@ -42,29 +51,27 @@ lookup(Variable, Environment, Type) :-
 %%-----------------------------------------------------------------------------------
 %% Literals
 litType(X, _, int) :-
-    integer(X).
+    integer(X),
+    !.
 litType(X, _, real) :-
-    real(X).
+    float(X),
+    !.
 litType(X, _, float) :-
-    float(X).
--------------------------------------------------------------------------------------
+    float(X),
+    !.
+%%-------------------------------------------------------------------------------------
 %% Type rules
 %% Base rules
-compatible_rule(int, real).
-compatible_rule(float, real).
+compatible_rule(int, real). %% integers are compatible with reals
+compatible_rule(float, real). %% floats are compatible with reals
 
-%% Reflexive
-compatible(T, T).
+compatible(T, T). %% Each type is compatible with itself
 
-%% Transitive
 compatible(T1, T2) :-
     compatible_rule(T1, T3), %% If T1 is compatible with T3
     compatible(T3, T2). %% T3 is also compatible with T2
     %% Returns true because T1 is compatible with T2
--------------------------------------------------------------------------------------
-%% Var-decl
-
-
+%%-------------------------------------------------------------------------------------
 
 
 
