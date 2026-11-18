@@ -41,6 +41,13 @@ typecheck((vardecl, Var, Expr), I, [(Var, Type)|I]) :-
     Type \= void. %% Type returned from litType is not void
     %% Returns true if all conditions met, adds Var to the environment.
 
+%% Explicit type declaration
+typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
+    \+ member((Var, _, _), I), %% The variable doesn't already exist in the environment
+    litType(Expr, I, EType), %% Get the expression Type
+    compatible(EType, Type), %% Check for compatibility
+    Type \= void. %% Type is not declared as a void
+    %% Returns true if all conditions are met, adds Var to the environment.
 
 %%-----------------------------------------------------------------------------------
 %% Lookup
@@ -49,16 +56,31 @@ lookup(Variable, Environment, Type) :-
     member((Variable, Type), Environment). % The variable/type exists in the environment
     %% Returns true if variable exists in the environment
 %%-----------------------------------------------------------------------------------
-%% Literals
+%% Types
+
+%% Integers
 litType(X, _, int) :-
     integer(X),
     !.
+
+%% Reals
 litType(X, _, real) :-
     float(X),
     !.
-litType(X, _, float) :-
-    float(X),
+
+%% Single-character string
+litType(X, _, char) :-
+    atom(X), %% the literal name can be used as an identifier
+    atom_length(X, 1). %% It is made of one character
+
+%% Boolean
+litType(true, _, bool) :-
     !.
+litType(false, _, bool) :-
+    !.
+
+%%
+
 %%-------------------------------------------------------------------------------------
 %% Type rules
 %% Base rules
@@ -69,6 +91,7 @@ compatible(T, T). %% Each type is compatible with itself
 
 compatible(T1, T2) :-
     compatible_rule(T1, T3), %% If T1 is compatible with T3
+    T1 \= T3,
     compatible(T3, T2). %% T3 is also compatible with T2
     %% Returns true because T1 is compatible with T2
 %%-------------------------------------------------------------------------------------

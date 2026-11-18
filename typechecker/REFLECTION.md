@@ -38,3 +38,10 @@ with Dr. Flint in the case of questions that I cannot find answers to.
 ### How did your plan align with your actual experience writing the typechecker?
 
 ### Did you find this assignment interesting? Did it help you to understand Prolog better?
+
+
+
+
+litType(Value, Expression, Type inferred)
+
+Last arg is always output?
