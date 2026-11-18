@@ -52,7 +52,7 @@ typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
 typecheck((set, Var, Expr), I, I) :-
     member((Var, VType), I), %% The variable exists in the environment
     aType(Expr, I, EType), %% Find variable type
-    compatible(VType, EType).%% Check compatibility
+    compatible(EType, VType).%% Check compatibility
 %%-----------------------------------------------------------------------------------
 %% Types
 
