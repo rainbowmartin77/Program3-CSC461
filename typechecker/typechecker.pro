@@ -47,17 +47,35 @@ typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
     aType(Expr, I, Type), %% Get the expression Type
     Type \= void. %% Type is not declared as a void
     %% Returns true if all conditions are met, adds Var to the environment.
+
+%% Set array variables
+typecheck((set, Var, Expr), I, I) :-
+    member((Var, VType), I), %% The variable exists in the environment
+    aType(Expr, I, EType), %% Find variable type
+    compatible(VType, EType).%% Check compatibility
 %%-----------------------------------------------------------------------------------
 %% Types
 
 %% Verify all elements in an array are the same type
 %% Base - array is empty
-aType([], _, _).
+aType(X, E, Type) :-
+    litType(X, E, Type).
 
 %% Recursive
 aType([H|T], E, Type) :-
     litType(H, E, Type),
     aType(T, E, Type).
+
+aType(Var, E, Type) :-
+    atom(Var),
+    member((Var, Type), E).
+
+% Empty/end of array
+arrayType([], _, _).
+
+arrayType([H|T], E, Type) :-
+    litType(H, E, Type),
+    arrayType(T, E, Type).
 
 %% Integers
 litType(X, _, int) :-
@@ -118,6 +136,7 @@ compatible(T1, T2) :-
     compatible_rule(T1, T3),
     compatible(T3, T2).
 %%-------------------------------------------------------------------------------------
+%% Set Variables
 
 
 
