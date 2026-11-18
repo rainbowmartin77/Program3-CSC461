@@ -53,6 +53,8 @@ typecheck((set, Var, Expr), I, I) :-
     member((Var, VType), I), %% The variable exists in the environment
     aType(Expr, I, EType), %% Find variable type
     compatible(EType, VType).%% Check compatibility
+
+
 %%-----------------------------------------------------------------------------------
 %% Types
 

@@ -42,8 +42,19 @@ with Dr. Flint in the case of questions that I cannot find answers to.
 
 
 
-litType(Value, Expression, Type inferred)
+Types done except void and function
+Compatibility rules done
 
-vardecltype(VariableName, Value, TypeDeclared)
+
+
+
+Expression rules to be done next.
+ArraySet
+Array element access
+if control structure
+    if/then, if/then/else
+for control structure
+
+Functions
 
 Last arg is always output?
