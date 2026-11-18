@@ -38,7 +38,7 @@ typecheck([H|T], I, O) :-
 typecheck((vardecl, Var, Expr), I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
     litType(Expr, I, T), %% Determine the variable type
-    Type \= void. %% Type returned from litType is not void
+    T \= void. %% Type returned from litType is not void
     %% Returns true if all conditions met, adds Var to the environment.
 
 %% Explicit type declaration
@@ -49,6 +49,15 @@ typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
     %% Returns true if all conditions are met, adds Var to the environment.
 %%-----------------------------------------------------------------------------------
 %% Types
+
+%% Verify all elements in an array are the same type
+%% Base - array is empty
+aType([], _, _).
+
+%% Recursive
+aType([H|T], E, Type) :-
+    litType(H, E, Type),
+    aType(T, E, Type).
 
 %% Integers
 litType(X, _, int) :-
@@ -79,7 +88,12 @@ litType(false, _, bool) :-
 %% Strings
 litType(X, _, (array, char)) :-
     string(X).
-%%
+
+%% Arrays
+litType([H|T], E, (array, Type)) :-
+    litType(H, E, Type), %% Determine the type of the first element
+    aType(T, E, Type). %% Check for remaining elements to be of the same type
+    %% Returns true and type of array
 
 %%-------------------------------------------------------------------------------------
 %% Type rules
