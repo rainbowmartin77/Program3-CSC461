@@ -35,9 +35,9 @@ typecheck([H|T], I, O) :-
     typecheck(T, M, O).
 
 %% Inferred type declaration
-typecheck((vardecl, Var, Expr), I, [(Var, Type)|I]) :-
+typecheck((vardecl, Var, Expr), I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    litType(Expr, I, Type), %% Determine the variable type
+    litType(Expr, I, T), %% Determine the variable type
     Type \= void. %% Type returned from litType is not void
     %% Returns true if all conditions met, adds Var to the environment.
 
@@ -76,6 +76,9 @@ litType(true, _, bool) :-
 litType(false, _, bool) :-
     !.
 
+%% Strings
+litType(X, _, (array, char)) :-
+    string(X).
 %%
 
 %%-------------------------------------------------------------------------------------
