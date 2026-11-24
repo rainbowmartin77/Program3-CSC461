@@ -42,6 +42,10 @@ typecheck((vardecl, Var, Expr), I, O) :-
 typecheck((vardecltype, Var, Expr, Type), I, O) :-
     checkVarDeclType(Var, Expr, Type, I, O).
 
+%% Setting variables
+typecheck((set, Var, Expr), I, O) :-
+    setVar(Var, Expr, I, O).
+
 %% Set array variables
 % typecheck((set, Var, Index, Expr), I, I) :-
 %     member((Var, VType), I), %% The variable exists in the environment
@@ -57,9 +61,14 @@ checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
 
 checkVarDeclType(Var, Expr, T, I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    aType(Expr, I, T), %% Get the expression Type
+    litType(Expr, I, T), %% Get the expression Type
     T \= void. %% Type is not declared as a void
     %% Returns true if all conditions are met, adds Var to the environment.
+
+setVar(Var, Expr, I, I) :-
+    member((Var, ExistingType), I), %% Check that variable exists in the environment
+    litType(Expr, I, T), %% Get the expression type
+    sameType(ExistingType, T). %% Check that the types match
 
 
 %%-----------------------------------------------------------------------------------
@@ -90,6 +99,16 @@ litType(true, _, bool) :-
 litType(false, _, bool) :-
     !.
 
+%% Strings - needed?
+litType(X, _, (array, char)) :-
+    array(X).
+
+%% Arrays
+litType([H|T], E, (array, Type)) :-
+    litType(H, E, Type), %% Determine the type of the first element
+    aType(T, E, Type). %% Check for remaining elements to be of the same type
+    %% Returns true and type of array
+
 %% Arrays
 %% Verify all elements in an array are the same type
 %% Base - array is empty
@@ -99,16 +118,6 @@ arrayType([], _, _).
 aType([H|T], E, Type) :-
     litType(H, E, Type),
     aType(T, E, Type).
-
-%% Strings - needed?
-% litType(X, _, (array, char)) :-
-%     string(X).
-
-%% Arrays
-litType([H|T], E, (array, Type)) :-
-    litType(H, E, Type), %% Determine the type of the first element
-    aType(T, E, Type). %% Check for remaining elements to be of the same type
-    %% Returns true and type of array
 
 %% Divide
 
@@ -136,4 +145,6 @@ compatible(T1, T2).
 compatible(T1, T2) :-
     compatible_rule(T1, T3),
     compatible(T3, T2).
+
+sameType(T, T). %% Matching types
 %%-------------------------------------------------------------------------------------
