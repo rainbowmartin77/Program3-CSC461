@@ -35,11 +35,8 @@ typecheck([H|T], I, O) :-
     typecheck(T, M, O).
 
 %% Inferred type declaration
-typecheck((vardecl, Var, Expr), I, [(Var, T)|I]) :-
-    \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    litType(Expr, I, T), %% Determine the variable type
-    T \= void. %% Type returned from litType is not void
-    %% Returns true if all conditions met, adds Var to the environment.
+typecheck((vardecl, Var, Expr), I, O) :-
+    checkVarDecl(Var, Expr, I, O).
 
 %% Explicit type declaration
 typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
@@ -49,10 +46,17 @@ typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
     %% Returns true if all conditions are met, adds Var to the environment.
 
 %% Set array variables
-typecheck((set, Var, Expr), I, I) :-
+typecheck((set, Var, Index, Expr), I, I) :-
     member((Var, VType), I), %% The variable exists in the environment
     aType(Expr, I, EType), %% Find variable type
     compatible(EType, VType).%% Check compatibility
+
+%% Helper predicates
+%% Execute vardecl?
+checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
+    \+ member((Var, _), I), %% Check that the variable name doesn't already exist
+    litType(Expr, I, T), %% Get the expression type
+    T \= void. %% Ensure the type is not void
 
 
 %%-----------------------------------------------------------------------------------
@@ -115,6 +119,9 @@ litType([H|T], E, (array, Type)) :-
     aType(T, E, Type). %% Check for remaining elements to be of the same type
     %% Returns true and type of array
 
+%% Divide
+
+
 %%-------------------------------------------------------------------------------------
 %% Compatibility rules
 %% Base rules
@@ -138,8 +145,3 @@ compatible(T1, T2) :-
     compatible_rule(T1, T3),
     compatible(T3, T2).
 %%-------------------------------------------------------------------------------------
-%% Set Variables
-
-
-
-
