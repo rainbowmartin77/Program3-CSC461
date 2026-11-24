@@ -170,6 +170,19 @@ litType((equiv, X, Y), Env, bool) :-
     compatible(TX, TY), %% Ensure that type of X and Y are compatible
     !.
 
+%% Logic operations
+litType((and, X, Y), Env, bool) :-
+    litType(X, Env, bool), %% Check that X is a bool
+    litType(Y, Env, bool). %% Check that Y is a bool
+
+litType((or, X, Y), Env, bool) :-
+    litType(X, Env, bool), %% Check that X is a bool
+    litType(Y, Env, bool). %% Check that Y is a bool
+
+litType((xor, X, Y), Env, bool) :-
+    litType(X, Env, bool), %% Check that X is a bool
+    litType(Y, Env, bool). %% Check that Y is a bool
+
 %% Strings - needed?
 % litType(X, _, (array, char)) :-
 %     array(X).
