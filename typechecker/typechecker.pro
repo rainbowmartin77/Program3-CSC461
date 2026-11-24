@@ -64,28 +64,6 @@ checkVarDeclType(Var, Expr, T, I, [(Var, T)|I]) :-
 
 %%-----------------------------------------------------------------------------------
 %% Types
-
-%% Verify all elements in an array are the same type
-%% Base - array is empty
-aType(X, E, Type) :-
-    litType(X, E, Type).
-
-%% Recursive
-aType([H|T], E, Type) :-
-    litType(H, E, Type),
-    aType(T, E, Type).
-
-aType(Var, E, Type) :-
-    atom(Var),
-    member((Var, Type), E).
-
-% Empty/end of array
-arrayType([], _, _).
-
-arrayType([H|T], E, Type) :-
-    litType(H, E, Type),
-    arrayType(T, E, Type).
-
 %% Integers
 litType(X, _, int) :-
     integer(X),
@@ -112,9 +90,19 @@ litType(true, _, bool) :-
 litType(false, _, bool) :-
     !.
 
-%% Strings
-litType(X, _, (array, char)) :-
-    string(X).
+%% Arrays
+%% Verify all elements in an array are the same type
+%% Base - array is empty
+arrayType([], _, _).
+
+%% Recursive
+aType([H|T], E, Type) :-
+    litType(H, E, Type),
+    aType(T, E, Type).
+
+%% Strings - needed?
+% litType(X, _, (array, char)) :-
+%     string(X).
 
 %% Arrays
 litType([H|T], E, (array, Type)) :-
@@ -131,6 +119,7 @@ litType([H|T], E, (array, Type)) :-
 compatible_rule(int, real). %% integers are compatible with reals
 compatible_rule(float, real). %% floats are compatible with reals
 compatible_rule(char, (array, char)). %% characters are compatible with strings
+compatible_rule((array, T), (array, T)). %% arrays of the same type are compatible
 
 %% Reflexive
 compatible(T, T). %% Each type is compatible with itself
