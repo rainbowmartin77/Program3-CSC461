@@ -109,6 +109,11 @@ litType((div, X, Y), Env, real) :-
     litType(X, Env, int),
     litType(Y, Env, int).
 
+% mkarray
+litType((mkarray, T, L), Env, (array, T)) :-
+    litType(L, Env, int), % Check that length is an int
+    T \= void. % Ensure type is not void
+
 %% Single-character string
 litType(X, _, char) :-
     atom(X), %% the literal name can be used as an identifier
@@ -121,8 +126,8 @@ litType(false, _, bool) :-
     !.
 
 %% Strings - needed?
-litType(X, _, (array, char)) :-
-    array(X).
+% litType(X, _, (array, char)) :-
+%     array(X).
 
 %% Arrays
 litType([H|T], E, (array, Type)) :-
