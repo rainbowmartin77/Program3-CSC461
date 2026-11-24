@@ -114,11 +114,6 @@ litType(X, Env, T) :-
     atom(X),
     member((X, T), Env). %% Check that X is in the environment
 
-%% Division
-litType((div, X, Y), Env, real) :-
-    litType(X, Env, int),
-    litType(Y, Env, int).
-
 % mkarray
 litType((mkarray, T, L), Env, (array, T)) :-
     litType(L, Env, int), % Check that length is an int
@@ -183,15 +178,46 @@ litType((xor, X, Y), Env, bool) :-
     litType(X, Env, bool), %% Check that X is a bool
     litType(Y, Env, bool). %% Check that Y is a bool
 
-%% Strings - needed?
-% litType(X, _, (array, char)) :-
-%     array(X).
+%% Arithmetic operators
+litType((add, X, Y), Env, T) :-
+    litType(X, Env, TX), %% Get type of X
+    litType(Y, Env, TY), %% Get type of Y
+    lowestCompatible(TX, TY, T). %% Check compatibility and get type
+
+litType((sub, X, Y), Env, T) :-
+    litType(X, Env, TX), %% Get type of X
+    litType(Y, Env, TY), %% Get type of Y
+    lowestCompatible(TX, TY, T). %% Check compatibility and get type
+
+litType((mul, X, Y), Env, T) :-
+    litType(X, Env, TX), %% Get type of X
+    litType(Y, Env, TY), %% Get type of Y
+    lowestCompatible(TX, TY, T). %% Check compatibility and get type
+    
+litType((div, X, Y), Env, real) :-
+    litType(X, Env, int), %% Ensure X is of type int
+    litType(Y, Env, int), %% Ensure Y is of type int
+    !.
+
+litType((div, X, Y), Env, T) :-
+    litType(X, Env, TX), %% Get type of X
+    litType(Y, Env, TY), %% Get type of Y
+    lowestCompatible(TX, TY, T). %% Check compatibility and get type
 
 %% Arrays
 litType([H|T], E, (array, Type)) :-
     litType(H, E, Type), %% Determine the type of the first element
     aType(T, E, Type). %% Check for remaining elements to be of the same type
     %% Returns true and type of array
+
+%% Arithmetic helper predicates
+lowestCompatible(int, real, real). %% Args are int and real, return real
+lowestCompatible(real, int, real). %% Args are real and int, return real
+lowestCompatible(real, real, real). %% Args are real, return real.
+
+%% Strings - needed?
+% litType(X, _, (array, char)) :-
+%     array(X).
 
 
 
@@ -204,13 +230,6 @@ arrayType([], _, _).
 aType([H|T], E, Type) :-
     litType(H, E, Type),
     aType(T, E, Type).
-
-%% Divide
-%% result of div is real
-aType((div, X, Y), I, real) :-
-    aType(X, I, int), %% X is an int
-    aType(Y, I, int), %% Y is an int
-    Y =\= 0. %% Y is not 0
 
 %%-------------------------------------------------------------------------------------
 %% Compatibility rules
