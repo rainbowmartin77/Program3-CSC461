@@ -49,6 +49,16 @@ typecheck((set, Var, Expr), I, O) :-
 typecheck((mkarray, T, Length), I, O) :-
     createArray(T, Length, I, O).
 
+%% Control Structures
+%% if
+typecheck((if, Condition, Then), I, I) :-
+    litType(Condition, I, bool), % Check that the condition is a bool
+    typecheck(Then, I, _). %% Recursive call
+
+%%if/else
+
+%% for
+
 %% Setting array
 % typecheck((arraySet, Var, Index, Expr), I, O) :-
 %     setArray(Var, Index, Expr, I, O).
@@ -125,6 +135,35 @@ litType(true, _, bool) :-
 litType(false, _, bool) :-
     !.
 
+%% Comparison operations
+litType((lt, X, Y), Env, bool) :-
+    litType(X, Env, TX), %% GEt type of X
+    litType(Y, Env, TY), %% Get type of Y
+    compatible(TX, real), %% Ensure X type is compatible with real
+    compatible(TY, real), %% Ensure Y type is compatible with real
+    !.
+
+litType((lte, X, Y), Env, bool) :-
+    litType(X, Env, TX), %% GEt type of X
+    litType(Y, Env, TY), %% Get type of Y
+    compatible(TX, real), %% Ensure X type is compatible with real
+    compatible(TY, real), %% Ensure Y type is compatible with real   
+    !.
+
+litType((gt, X, Y), Env, bool) :-
+    litType(X, Env, TX), %% GEt type of X
+    litType(Y, Env, TY), %% Get type of Y
+    compatible(TX, real), %% Ensure X type is compatible with real
+    compatible(TY, real), %% Ensure Y type is compatible with real
+    !.
+
+litType((gte, X, Y), Env, bool) :-
+    litType(X, Env, TX), %% GEt type of X
+    litType(Y, Env, TY), %% Get type of Y
+    compatible(TX, real), %% Ensure X type is compatible with real
+    compatible(TY, real), %% Ensure Y type is compatible with real   
+    !.
+
 %% Strings - needed?
 % litType(X, _, (array, char)) :-
 %     array(X).
@@ -134,6 +173,8 @@ litType([H|T], E, (array, Type)) :-
     litType(H, E, Type), %% Determine the type of the first element
     aType(T, E, Type). %% Check for remaining elements to be of the same type
     %% Returns true and type of array
+
+
 
 %% Arrays
 %% Verify all elements in an array are the same type
