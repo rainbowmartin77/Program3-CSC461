@@ -164,6 +164,12 @@ litType((gte, X, Y), Env, bool) :-
     compatible(TY, real), %% Ensure Y type is compatible with real   
     !.
 
+litType((equiv, X, Y), Env, bool) :-
+    litType(X, Env, TX), %% Get type of X
+    litType(Y, Env, TY), %% Get type of Y
+    compatible(TX, TY), %% Ensure that type of X and Y are compatible
+    !.
+
 %% Strings - needed?
 % litType(X, _, (array, char)) :-
 %     array(X).
