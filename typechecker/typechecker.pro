@@ -99,6 +99,16 @@ litType(X, _, float) :-
     float(X),
     !.
 
+%% Variables
+litType(X, Env, T) :-
+    atom(X),
+    member((X, T), Env). %% Check that X is in the environment
+
+%% Division
+litType((div, X, Y), Env, real) :-
+    litType(X, Env, int),
+    litType(Y, Env, int).
+
 %% Single-character string
 litType(X, _, char) :-
     atom(X), %% the literal name can be used as an identifier
@@ -131,7 +141,11 @@ aType([H|T], E, Type) :-
     aType(T, E, Type).
 
 %% Divide
-
+%% result of div is real
+aType((div, X, Y), I, real) :-
+    aType(X, I, int), %% X is an int
+    aType(Y, I, int), %% Y is an int
+    Y =\= 0. %% Y is not 0
 
 %%-------------------------------------------------------------------------------------
 %% Compatibility rules
