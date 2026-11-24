@@ -39,17 +39,14 @@ typecheck((vardecl, Var, Expr), I, O) :-
     checkVarDecl(Var, Expr, I, O).
 
 %% Explicit type declaration
-typecheck((vardecltype, Var, Expr, Type), I, [(Var, Type)|I]) :-
-    \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    aType(Expr, I, Type), %% Get the expression Type
-    Type \= void. %% Type is not declared as a void
-    %% Returns true if all conditions are met, adds Var to the environment.
+typecheck((vardecltype, Var, Expr, Type), I, O) :-
+    checkVarDeclType(Var, Expr, Type, I, O).
 
 %% Set array variables
-typecheck((set, Var, Index, Expr), I, I) :-
-    member((Var, VType), I), %% The variable exists in the environment
-    aType(Expr, I, EType), %% Find variable type
-    compatible(EType, VType).%% Check compatibility
+% typecheck((set, Var, Index, Expr), I, I) :-
+%     member((Var, VType), I), %% The variable exists in the environment
+%     aType(Expr, I, EType), %% Find variable type
+%     compatible(EType, VType).%% Check compatibility
 
 %% Helper predicates
 %% Execute vardecl?
@@ -57,6 +54,12 @@ checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% Check that the variable name doesn't already exist
     litType(Expr, I, T), %% Get the expression type
     T \= void. %% Ensure the type is not void
+
+checkVarDeclType(Var, Expr, T, I, [(Var, T)|I]) :-
+    \+ member((Var, _), I), %% The variable doesn't already exist in the environment
+    aType(Expr, I, T), %% Get the expression Type
+    T \= void. %% Type is not declared as a void
+    %% Returns true if all conditions are met, adds Var to the environment.
 
 
 %%-----------------------------------------------------------------------------------
