@@ -46,11 +46,12 @@ typecheck((vardecltype, Var, Expr, Type), I, O) :-
 typecheck((set, Var, Expr), I, O) :-
     setVar(Var, Expr, I, O).
 
-%% Set array variables
-% typecheck((set, Var, Index, Expr), I, I) :-
-%     member((Var, VType), I), %% The variable exists in the environment
-%     aType(Expr, I, EType), %% Find variable type
-%     compatible(EType, VType).%% Check compatibility
+typecheck((mkarray, T, Length), I, O) :-
+    createArray(T, Length, I, O).
+
+%% Setting array
+% typecheck((arraySet, Var, Index, Expr), I, O) :-
+%     setArray(Var, Index, Expr, I, O).
 
 %% Helper predicates
 %% Execute vardecl?
@@ -69,6 +70,16 @@ setVar(Var, Expr, I, I) :-
     member((Var, ExistingType), I), %% Check that variable exists in the environment
     litType(Expr, I, T), %% Get the expression type
     sameType(ExistingType, T). %% Check that the types match
+
+createArray(T, Length, I, [(array, T)|I]) :-
+    litType(Length, _, LengthType), %% Get type of the length argument
+    sameType(LengthType, int), %% Ensure length is of type int
+    T \= void. %% Type declared is not void
+
+% setArray(Var, Index, Expr, I, O) :-
+%     memeber((Var, ExistingType), I), %% Check that the variable exists
+%     litType(Expr, I, T), %% Get the expression type
+% Need to create arrays first
 
 
 %%-----------------------------------------------------------------------------------
