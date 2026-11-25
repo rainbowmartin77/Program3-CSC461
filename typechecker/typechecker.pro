@@ -51,11 +51,19 @@ typecheck((mkarray, T, Length), I, O) :-
 
 %% Control Structures
 %% if
-typecheck((if, Condition, Then), I, I) :-
+typecheck((if, Condition, Then), I, O) :-
     litType(Condition, I, bool), % Check that the condition is a bool
-    typecheck(Then, I, _). %% Recursive call
+    typecheck(Then, I, O). %% Recursive call
 
 %%if/else
+typecheck((if, Condition, Then, _), I, O) :-
+    litType(Condition, I, bool), %% Check that the condition is a bool
+    typecheck(Then, I, O),
+    !.
+
+typecheck((if, _, _, Else), I, O) :-
+    typecheck(Else, I, O).
+
 
 %% for
 
@@ -115,7 +123,7 @@ litType(X, Env, T) :-
     member((X, T), Env). %% Check that X is in the environment
 
 % mkarray
-litType((mkarray, T, L), Env, (array, T)) :-
+litType((mkarray, T, L), Env, [(array, T)|Env]) :-
     litType(L, Env, int), % Check that length is an int
     T \= void. % Ensure type is not void
 
