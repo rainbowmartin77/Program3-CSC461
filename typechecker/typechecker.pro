@@ -65,23 +65,27 @@ typecheck((if, _, _, Else), I, O) :-
     typecheck(Else, I, O).
 
 
-%%%%%%%% STOPPING HERE - NEED TO FINISH FUNCTION TO TEST FOR LOOP
-%% ALSO NEED TO CHECK ARRAY ACCESS, FUNCTION CALL
+%%%%%%%% STOPPING HERE
+%% NEED TO CHECK ARRAY ACCESS
 %% FINISH WITH TESTS
 
 %% for loop - NEEDS TO BE COMPLETE
 typecheck((for, Var, Iter, Body), I, I) :-
     \+ member((Var, _), I), %% The Var is not in the environment
-    litType(Iter, _, (array, IterType)), %% Ensure iteration type
-    litType(Body, [(Var, IterType)|I], _). %% Typecheck the body
+    litType(Iter, I, (array, IterType)), %% Ensure iteration type
+    typecheck(Body, [(Var, IterType)|I], _). %% Typecheck the body
 
 %% Functions
-typecheck((function, Name, Params, Body, ReturnType), I, ([[Name, [function, Params, ReturnType]]|I])) :-
-    \+ member([Name, _], I), %% The name does not exist in the environment
+typecheck((function, Name, Params, Body, ReturnType), I, ([(Name, [function, Params, ReturnType])|I])) :-
+    \+ member((Name, _), I), %% The name does not exist in the environment
     append(Params, I, FunctionEnvironment),
     litType(Body, FunctionEnvironment, BodyType),
     compatible(BodyType, ReturnType).
 
+%% Function call
+typecheck((call, Name, Args), I, I) :-
+    member((Name, [function, Params, _]), I), %% Check that function exists
+    checkArgs(Args, Params, I). %% Use helper predicate to compare argument and parameter types
 
 %% Setting array
 % typecheck((arraySet, Var, Index, Expr), I, O) :-
@@ -109,6 +113,15 @@ createArray(T, Length, I, [(array, T)|I]) :-
     litType(Length, _, LengthType), %% Get type of the length argument
     sameType(LengthType, int), %% Ensure length is of type int
     T \= void. %% Type declared is not void
+
+%% Base case - all arguments evaluated
+checkArgs([], [], _).
+
+%% Recursively go through list
+checkArgs([H|T], [(_,PType)|Params], I) :-
+    litType(H, I, AType), %% Get the type of the argument
+    compatible(AType, PType), %% Compare argument and parameter type
+    checkArgs(T, Params, I). %% Recursively call to check next argument
 
 % setArray(Var, Index, Expr, I, O) :-
 %     memeber((Var, ExistingType), I), %% Check that the variable exists
@@ -147,7 +160,7 @@ litType(X, Env, T) :-
     member((X, T), Env). %% Check that X is in the environment
 
 % mkarray
-litType((mkarray, T, L), Env, [(array, T)|Env]) :-
+litType((mkarray, T, L), Env, (array, T)) :-
     litType(L, Env, int), % Check that length is an int
     T \= void. % Ensure type is not void
 
