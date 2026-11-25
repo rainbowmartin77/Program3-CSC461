@@ -46,26 +46,18 @@ typecheck((vardecltype, Var, Expr, Type), I, O) :-
 typecheck((set, Var, Expr), I, O) :-
     setVar(Var, Expr, I, O).
 
-%% Making an array
-typecheck((mkarray, T, Length), I, O) :-
-    createArray(T, Length, I, O).
-
 %% Control Structures
 %% if
-typecheck((if, Condition, Then), I, O) :-
+typecheck((if, Condition, Then), I, I) :-
     litType(Condition, I, bool), % Check that the condition is a bool
-    typecheck(Then, I, O), %% Recursive call
+    typecheck(Then, I, _), %% Recursive call
     !.
 
-%%if/else
-typecheck((if, Condition, Then, _), I, O) :-
-    litType(Condition, I, bool), %% Check that the condition is a bool
-    typecheck(Then, I, O),
-    !. %% Stop here if Condition is met
-
 %% Evaluate else command if Condition fails
-typecheck((if, _, _, Else), I, O) :-
-    typecheck(Else, I, O).
+typecheck((if, Condition, Then, Else), I, I) :-
+    litType(Condition, I, bool),
+    typecheck(Then, I, _),
+    typecheck(Else, I, _).
 
 %% for loop 
 typecheck((for, Var, Iter, Body), I, I) :-
@@ -76,16 +68,17 @@ typecheck((for, Var, Iter, Body), I, I) :-
 %% Creating functions
 typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, Params, ReturnType)|I]) :-
     \+ member((Name, _), I), %% The name does not exist in the environment
-    FunctionEnvironment = [(Name, function, Params, ReturnType)|Params], %% Set function environment
+    append([(Name, function, Params, ReturnType)|Params], I, FunctionEnvironment), %% Set function environment
     bodyCheck(Body, FunctionEnvironment, BodyType), %% Typecheck body commands
     compatible(BodyType, ReturnType). %% Ensure return type matches
 
 
-% %% Setting array
-% typecheck((arraySet, Var, Index, Expr), I, O) :-
-%     setArray(Var, Index, Expr, I, O).
-
-% %% Array indexing
+%% Setting array
+typecheck((arraySet, Var, Index, Expr), I, I) :-
+    member((Var, (array, ArrayType)), I),
+    litType(Index, I, int), %% Ensure index is of type int
+    litType(Expr, I, EType), %% Get expression type
+    compatible(EType, ArrayType). %% Verify compatibility
 
 %% Helper predicates
 %% Check variable declarations
@@ -107,12 +100,6 @@ setVar(Var, Expr, I, I) :-
     member((Var, ExistingType), I), %% Check that variable exists in the environment
     litType(Expr, I, T), %% Get the expression type
     sameType(ExistingType, T). %% Check that the types match
-
-%% Create an array
-createArray(T, Length, I, [(array, T)|I]) :-
-    litType(Length, _, LengthType), %% Get type of the length argument
-    sameType(LengthType, int), %% Ensure length is of type int
-    T \= void. %% Type declared is not void
 
 %% Verify function argument types match parameter types
 %% Base case - all arguments evaluated
@@ -137,13 +124,6 @@ bodyCheck([Stmt|Rest], Env, T) :-
     typecheck(Stmt, Env, NewEnv),
     bodyCheck(Rest, NewEnv, T).
 
-% setArray(Var, Index, Expr, I, O) :-
-%     memeber((Var, ExistingType), I), %% Check that the variable exists
-%     litType(Expr, I, T), %% Get the expression type
-
-
-
-
 
 %%-----------------------------------------------------------------------------------
 %% Evaluate types
@@ -158,11 +138,6 @@ litType(X, _, int) :-
     integer(X),
     !.
 
-%% Reals
-litType(X, _, real) :-
-    float(X),
-    !.
-
 %% Floats
 litType(X, _, float) :-
     float(X),
@@ -173,10 +148,15 @@ litType(X, Env, T) :-
     atom(X),
     member((X, T), Env). %% Check that X is in the environment
 
-% mkarray
+%% mkarray
 litType((mkarray, T, L), Env, (array, T)) :-
     litType(L, Env, int), % Check that length is an int
     T \= void. % Ensure type is not void
+
+%% Array index
+litType((arrayInd, Var, Index), Env, EType) :-
+    member((Var, (array, EType)), Env), %% Ensure that the array exists
+    litType(Index, Env, int). %% Ensure that the index is an int
 
 %% Single character string
 litType(X, _, char) :-
@@ -280,17 +260,11 @@ litType((call, Name, Args), Env, ReturnType) :-
     member((Name, function, Params, ReturnType), Env), %% Check that function exists
     checkArgs(Args, Params, Env). %% Use helper predicate to compare argument and parameter types
 
-
 %% Arithmetic helper predicates
 lowestCompatible(int, real, real). %% Args are int and real, return real
 lowestCompatible(real, int, real). %% Args are real and int, return real
 lowestCompatible(real, real, real). %% Args are real, return real.
 lowestCompatible(int, int, int).
-
-%% Strings - needed?
-% litType(X, _, (array, char)) :-
-%     array(X).
-
 
 
 %% Arrays
