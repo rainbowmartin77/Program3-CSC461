@@ -76,16 +76,12 @@ typecheck((for, Var, Iter, Body), I, I) :-
     typecheck(Body, [(Var, IterType)|I], _). %% Typecheck the body
 
 %% Functions
-typecheck((function, Name, Params, Body, ReturnType), I, ([(Name, [function, Params, ReturnType])|I])) :-
+typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, [Params, ReturnType])|I]) :-
     \+ member((Name, _), I), %% The name does not exist in the environment
     append(Params, I, FunctionEnvironment),
-    litType(Body, FunctionEnvironment, BodyType),
+    bodyCheck(Body, FunctionEnvironment, BodyType),
     compatible(BodyType, ReturnType).
 
-%% Function call
-typecheck((call, Name, Args), I, I) :-
-    member((Name, [function, Params, _]), I), %% Check that function exists
-    checkArgs(Args, Params, I). %% Use helper predicate to compare argument and parameter types
 
 %% Setting array
 % typecheck((arraySet, Var, Index, Expr), I, O) :-
@@ -100,8 +96,10 @@ checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
 
 checkVarDeclType(Var, Expr, T, I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
-    litType(Expr, I, T), %% Get the expression Type
-    T \= void. %% Type is not declared as a void
+    litType(Expr, I, ET), %% Get the expression Type
+    compatible(ET, T),
+    T \= void, %% Type is not declared as a void
+    !.
     %% Returns true if all conditions are met, adds Var to the environment.
 
 setVar(Var, Expr, I, I) :-
@@ -122,6 +120,14 @@ checkArgs([H|T], [(_,PType)|Params], I) :-
     litType(H, I, AType), %% Get the type of the argument
     compatible(AType, PType), %% Compare argument and parameter type
     checkArgs(T, Params, I). %% Recursively call to check next argument
+
+%% Body helpers
+bodyCheck([Expr], Env, T) :-
+    litType(Expr, Env, T).
+
+bodyCheck([Expr|Rest], Env, T) :-
+    typecheck(Expr, Env, LocalEnv),
+    bodyCheck(Rest, LocalEnv, T).
 
 % setArray(Var, Index, Expr, I, O) :-
 %     memeber((Var, ExistingType), I), %% Check that the variable exists
@@ -165,7 +171,7 @@ litType((mkarray, T, L), Env, (array, T)) :-
     T \= void. % Ensure type is not void
 
 %% Single-character string
-litType(X, _, char) :-
+litType(X, _, (array, char)) :-
     string(X), %% the literal name can be used as an identifier
     string_length(X, 1). %% It is made of one character
 
@@ -256,10 +262,17 @@ litType([H|T], E, (array, Type)) :-
     aType(T, E, Type). %% Check for remaining elements to be of the same type
     %% Returns true and type of array
 
+%% Function call
+litType((call, Name, Args), Env, ReturnType) :-
+    member((Name, function, [Params, ReturnType]), Env), %% Check that function exists
+    checkArgs(Args, Params, Env). %% Use helper predicate to compare argument and parameter types
+
+
 %% Arithmetic helper predicates
 lowestCompatible(int, real, real). %% Args are int and real, return real
 lowestCompatible(real, int, real). %% Args are real and int, return real
 lowestCompatible(real, real, real). %% Args are real, return real.
+lowestCompatible(int, int, int).
 
 %% Strings - needed?
 % litType(X, _, (array, char)) :-
@@ -286,15 +299,18 @@ compatible_rule(char, (array, char)). %% characters are compatible with strings
 compatible_rule((array, T), (array, T)). %% arrays of the same type are compatible
 
 %% Reflexive
-compatible(T, T). %% Each type is compatible with itself
+compatible(T, T) :- %% Each type is compatible with itself
+    !.
 
 %% Check for different type compatibility
 compatible(T1, T2) :-
-    compatible_rule(T1, T2).
+    compatible_rule(T1, T2),
+    !.
 
 %% Check array compatibility
 compatible((array, T1), (array, T2)) :-
-compatible(T1, T2).
+    compatible(T1, T2),
+    !.
 
 %% Transitive compatibility
 compatible(T1, T2) :-
