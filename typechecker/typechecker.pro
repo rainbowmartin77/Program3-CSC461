@@ -53,7 +53,8 @@ typecheck((mkarray, T, Length), I, O) :-
 %% if
 typecheck((if, Condition, Then), I, O) :-
     litType(Condition, I, bool), % Check that the condition is a bool
-    typecheck(Then, I, O). %% Recursive call
+    typecheck(Then, I, O), %% Recursive call
+    !.
 
 %%if/else
 typecheck((if, Condition, Then, _), I, O) :-
@@ -76,9 +77,9 @@ typecheck((for, Var, Iter, Body), I, I) :-
     typecheck(Body, [(Var, IterType)|I], _). %% Typecheck the body
 
 %% Functions
-typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, [Params, ReturnType])|I]) :-
+typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, Params, ReturnType)|I]) :-
     \+ member((Name, _), I), %% The name does not exist in the environment
-    append(Params, I, FunctionEnvironment),
+    FunctionEnvironment = [(Name, function, Params, ReturnType)|Params],
     bodyCheck(Body, FunctionEnvironment, BodyType),
     compatible(BodyType, ReturnType).
 
@@ -125,9 +126,14 @@ checkArgs([H|T], [(_,PType)|Params], I) :-
 bodyCheck([Expr], Env, T) :-
     litType(Expr, Env, T).
 
-bodyCheck([Expr|Rest], Env, T) :-
-    typecheck(Expr, Env, LocalEnv),
-    bodyCheck(Rest, LocalEnv, T).
+bodyCheck([Stmt, Expr], Env, T) :-
+    typecheck(Stmt, Env, NewEnv),
+    litType(Expr, NewEnv, T),
+    !.
+
+bodyCheck([Stmt|Rest], Env, T) :-
+    typecheck(Stmt, Env, NewEnv),
+    bodyCheck(Rest, NewEnv, T).
 
 % setArray(Var, Index, Expr, I, O) :-
 %     memeber((Var, ExistingType), I), %% Check that the variable exists
@@ -264,7 +270,7 @@ litType([H|T], E, (array, Type)) :-
 
 %% Function call
 litType((call, Name, Args), Env, ReturnType) :-
-    member((Name, function, [Params, ReturnType]), Env), %% Check that function exists
+    member((Name, function, Params, ReturnType), Env), %% Check that function exists
     checkArgs(Args, Params, Env). %% Use helper predicate to compare argument and parameter types
 
 
@@ -298,13 +304,13 @@ compatible_rule(float, real). %% floats are compatible with reals
 compatible_rule(char, (array, char)). %% characters are compatible with strings
 compatible_rule((array, T), (array, T)). %% arrays of the same type are compatible
 
-%% Reflexive
-compatible(T, T) :- %% Each type is compatible with itself
-    !.
-
 %% Check for different type compatibility
 compatible(T1, T2) :-
     compatible_rule(T1, T2),
+    !.
+
+%% Reflexive
+compatible(T, T) :- %% Each type is compatible with itself
     !.
 
 %% Check array compatibility
