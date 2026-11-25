@@ -14,7 +14,7 @@ semester("2026 Fall").
 %! class(Class) is det.
 %%
 %% Class student is enrolled in.
-class("CSC-461-DT1").
+course("CSC-461-DT1").
 
 %! typecheck(+Code, +InEnv, -OutEnv) is semidet.
 %% TODO: Implement the typechecker below; a basecase is provided for you.
@@ -81,9 +81,11 @@ typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, Param
     compatible(BodyType, ReturnType). %% Ensure return type matches
 
 
-%% Setting array
+% %% Setting array
 % typecheck((arraySet, Var, Index, Expr), I, O) :-
 %     setArray(Var, Index, Expr, I, O).
+
+% %% Array indexing
 
 %% Helper predicates
 %% Check variable declarations
@@ -138,7 +140,7 @@ bodyCheck([Stmt|Rest], Env, T) :-
 % setArray(Var, Index, Expr, I, O) :-
 %     memeber((Var, ExistingType), I), %% Check that the variable exists
 %     litType(Expr, I, T), %% Get the expression type
-% Need to create arrays first
+
 
 
 
@@ -176,11 +178,16 @@ litType((mkarray, T, L), Env, (array, T)) :-
     litType(L, Env, int), % Check that length is an int
     T \= void. % Ensure type is not void
 
-%% Single-character string
+%% Single character string
+litType(X, _, char) :-
+    string(X), %% X is a string
+    string_length(X, 1). %% String of length 1
+
+%% Character string
 litType(X, _, (array, char)) :-
     string(X), %% the literal name can be used as an identifier
-    string_length(X, 1). %% It is made of one character
-
+    string_length(X, N), %% Get string length
+    N > 1. %% Length is mor than one
 
 %% Boolean
 litType(true, _, bool) :-
