@@ -25,7 +25,7 @@ class("CSC-461-DT1").
 %% Empty/base case
 typecheck([], X, X).
 
-%% Continue reading code
+%% Read list of commands
 typecheck([H|T], I, O) :-
     %% Read head of list, using I as next InEnv, M as updated list of env
     typecheck(H, I, M),
@@ -46,6 +46,7 @@ typecheck((vardecltype, Var, Expr, Type), I, O) :-
 typecheck((set, Var, Expr), I, O) :-
     setVar(Var, Expr, I, O).
 
+%% Making an array
 typecheck((mkarray, T, Length), I, O) :-
     createArray(T, Length, I, O).
 
@@ -60,28 +61,24 @@ typecheck((if, Condition, Then), I, O) :-
 typecheck((if, Condition, Then, _), I, O) :-
     litType(Condition, I, bool), %% Check that the condition is a bool
     typecheck(Then, I, O),
-    !.
+    !. %% Stop here if Condition is met
 
+%% Evaluate else command if Condition fails
 typecheck((if, _, _, Else), I, O) :-
     typecheck(Else, I, O).
 
-
-%%%%%%%% STOPPING HERE
-%% NEED TO CHECK ARRAY ACCESS
-%% FINISH WITH TESTS
-
-%% for loop - NEEDS TO BE COMPLETE
+%% for loop 
 typecheck((for, Var, Iter, Body), I, I) :-
     \+ member((Var, _), I), %% The Var is not in the environment
     litType(Iter, I, (array, IterType)), %% Ensure iteration type
     typecheck(Body, [(Var, IterType)|I], _). %% Typecheck the body
 
-%% Functions
+%% Creating functions
 typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, Params, ReturnType)|I]) :-
     \+ member((Name, _), I), %% The name does not exist in the environment
-    FunctionEnvironment = [(Name, function, Params, ReturnType)|Params],
-    bodyCheck(Body, FunctionEnvironment, BodyType),
-    compatible(BodyType, ReturnType).
+    FunctionEnvironment = [(Name, function, Params, ReturnType)|Params], %% Set function environment
+    bodyCheck(Body, FunctionEnvironment, BodyType), %% Typecheck body commands
+    compatible(BodyType, ReturnType). %% Ensure return type matches
 
 
 %% Setting array
@@ -89,7 +86,7 @@ typecheck((function, Name, Params, Body, ReturnType), I, [(Name, function, Param
 %     setArray(Var, Index, Expr, I, O).
 
 %% Helper predicates
-%% Execute vardecl?
+%% Check variable declarations
 checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% Check that the variable name doesn't already exist
     litType(Expr, I, T), %% Get the expression type
@@ -98,21 +95,24 @@ checkVarDecl(Var, Expr, I, [(Var, T)|I]) :-
 checkVarDeclType(Var, Expr, T, I, [(Var, T)|I]) :-
     \+ member((Var, _), I), %% The variable doesn't already exist in the environment
     litType(Expr, I, ET), %% Get the expression Type
-    compatible(ET, T),
+    compatible(ET, T), %% Ensure compatibility
     T \= void, %% Type is not declared as a void
     !.
     %% Returns true if all conditions are met, adds Var to the environment.
 
+%% Setting an existing variable to a matching type
 setVar(Var, Expr, I, I) :-
     member((Var, ExistingType), I), %% Check that variable exists in the environment
     litType(Expr, I, T), %% Get the expression type
     sameType(ExistingType, T). %% Check that the types match
 
+%% Create an array
 createArray(T, Length, I, [(array, T)|I]) :-
     litType(Length, _, LengthType), %% Get type of the length argument
     sameType(LengthType, int), %% Ensure length is of type int
     T \= void. %% Type declared is not void
 
+%% Verify function argument types match parameter types
 %% Base case - all arguments evaluated
 checkArgs([], [], _).
 
@@ -144,7 +144,7 @@ bodyCheck([Stmt|Rest], Env, T) :-
 
 
 %%-----------------------------------------------------------------------------------
-%% Types
+%% Evaluate types
 litType([Expr], I, T) :-
     litType(Expr, I, T).
 
@@ -289,7 +289,7 @@ lowestCompatible(int, int, int).
 %% Arrays
 %% Verify all elements in an array are the same type
 %% Base - array is empty
-arrayType([], _, _).
+aType([], _, _).
 
 %% Recursive
 aType([H|T], E, Type) :-
