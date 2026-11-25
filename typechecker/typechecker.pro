@@ -65,7 +65,23 @@ typecheck((if, _, _, Else), I, O) :-
     typecheck(Else, I, O).
 
 
-%% for
+%%%%%%%% STOPPING HERE - NEED TO FINISH FUNCTION TO TEST FOR LOOP
+%% ALSO NEED TO CHECK ARRAY ACCESS, FUNCTION CALL
+%% FINISH WITH TESTS
+
+%% for loop - NEEDS TO BE COMPLETE
+typecheck((for, Var, Iter, Body), I, I) :-
+    \+ member((Var, _), I), %% The Var is not in the environment
+    litType(Iter, _, (array, IterType)), %% Ensure iteration type
+    litType(Body, [(Var, IterType)|I], _). %% Typecheck the body
+
+%% Functions
+typecheck((function, Name, Params, Body, ReturnType), I, ([[Name, [function, Params, ReturnType]]|I])) :-
+    \+ member([Name, _], I), %% The name does not exist in the environment
+    append(Params, I, FunctionEnvironment),
+    litType(Body, FunctionEnvironment, BodyType),
+    compatible(BodyType, ReturnType).
+
 
 %% Setting array
 % typecheck((arraySet, Var, Index, Expr), I, O) :-
@@ -100,8 +116,16 @@ createArray(T, Length, I, [(array, T)|I]) :-
 % Need to create arrays first
 
 
+
+
 %%-----------------------------------------------------------------------------------
 %% Types
+litType([Expr], I, T) :-
+    litType(Expr, I, T).
+
+litType([_|Rest], I, T) :-
+    litType(Rest, I, T).
+
 %% Integers
 litType(X, _, int) :-
     integer(X),
@@ -129,8 +153,9 @@ litType((mkarray, T, L), Env, [(array, T)|Env]) :-
 
 %% Single-character string
 litType(X, _, char) :-
-    atom(X), %% the literal name can be used as an identifier
-    atom_length(X, 1). %% It is made of one character
+    string(X), %% the literal name can be used as an identifier
+    string_length(X, 1). %% It is made of one character
+
 
 %% Boolean
 litType(true, _, bool) :-
